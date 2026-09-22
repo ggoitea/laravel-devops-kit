@@ -1,0 +1,32 @@
+{
+    "name": "ggoitea/laravel-devops-kit",
+    "description": "Development and DevOps toolkit for Laravel applications",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "illuminate/console": "^10.0|^11.0|^12.0",
+        "illuminate/support": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ggoitea\\LaravelDevopsKit\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/devops-install.sh"
+    ],
+    "autoload-dev": {
+        "psr-4": {
+            "Ggoitea\\LaravelDevopsKit\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

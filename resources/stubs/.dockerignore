@@ -1,0 +1,11 @@
+.git
+.vscode
+.agents
+.cursor
+.gemini
+.opencode
+.gitignore
+.github
+
+node_modules
+

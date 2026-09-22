@@ -1,0 +1,13 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "composer": true,
+        "/^composer validate --no-check-publish && php -l src/Console/Commands/InstallCommand\\.php && php -l src/DevOpsKitServiceProvider\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^composer validate --no-check-publish && php -l src/Console/Commands/InstallCommand\\.php && composer test && git diff --check$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

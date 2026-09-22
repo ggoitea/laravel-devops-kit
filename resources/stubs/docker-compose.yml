@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+      args:
+        UID: ${UID}
+        GID: ${GID}
+    volumes:
+      - ./:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    expose:
+      - "9000"
+      - "5173"
+    
+    networks:
+      - ipvu
+  pgsql:
+    image: postgis/postgis:18-3.6-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    expose:
+      - "5432"
+    networks:
+      - ipvu
+    volumes:
+      - pgsql_data:/var/lib/postgresql
+  mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    expose:
+      - "3306"
+    profiles:
+      - tools
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ipvu
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ipvu
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+      - "5173:5173"
+    volumes:
+      - ./docker/nginx:/etc/nginx/conf.d
+      - ./:/var/www/html
+    networks:
+      - ipvu  
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    platform: linux/amd64
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - ipvu
+    profiles:
+      - tools
+
+volumes:
+  redis_data:
+  pgsql_data:
+  mariadb_data:
+
+networks:
+  ipvu:
+    driver: bridge

@@ -1,0 +1,11 @@
+FROM ggoitea/laravel-prod:13-php8.5
+
+WORKDIR /var/www/html
+
+COPY ./docker/php/php.ini-production /usr/local/etc/php/php.ini
+
+COPY . .
+
+RUN mkdir -p storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
