@@ -24,6 +24,23 @@
         "/^php -r '\\$j=json_decode\\(file_get_contents\\(\"composer\\.lock\"\\), true\\); foreach \\(array_merge\\(\\$j\\[\"packages\"\\] \\?\\? \\[\\], \\$j\\[\"packages-dev\"\\] \\?\\? \\[\\]\\) as \\$p\\) echo \\$p\\[\"name\"\\]\\.\" \"\\.\\$p\\[\"version\"\\]\\.PHP_EOL;' \\| rg '\\^\\(illuminate/\\|laravel/framework\\|orchestra/testbench\\|phpunit/phpunit\\)'$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "vendor/bin/phpunit": true,
+        "/^ls -la vendor/orchestra/testbench-core/laravel/\\.env vendor/orchestra/testbench-core/laravel/\\.env\\.example 2>&1 \\|\\| true$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php -l src/Console/Commands/InstallCommand\\.php && sh -n bin/devops-install\\.sh$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^vendor/bin/phpunit tests/Unit/DevopsInstallScriptTest\\.php tests/Unit/InstallCommandTest\\.php && php -l src/Console/Commands/InstallCommand\\.php && sh -n bin/devops-install\\.sh$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git diff --check && sh -n bin/devops-install\\.sh && php -l src/Console/Commands/InstallCommand\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

@@ -31,6 +31,14 @@ class InstallCommand extends Command
             }
         }
 
+        if (! $this->ensureEnvironmentVariables()) {
+            return self::FAILURE;
+        }
+
+        if (! $this->ensureGitignoreEntry()) {
+            return self::FAILURE;
+        }
+
         return self::SUCCESS;
     }
 
@@ -72,6 +80,107 @@ class InstallCommand extends Command
 
         if (! mkdir($directory, 0755, true) && ! is_dir($directory)) {
             $this->error("No se pudo crear el directorio: {$directory}");
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function ensureEnvironmentVariables(): bool
+    {
+        $uid = $this->currentUserId('posix_getuid');
+        $gid = $this->currentUserId('posix_getgid');
+
+        if ($uid === null || $gid === null) {
+            $this->error('No se pudieron determinar UID y GID del usuario actual.');
+
+            return false;
+        }
+
+        foreach ([base_path('.env.example'), base_path('.env')] as $file) {
+            if (! $this->addEnvironmentVariables($file, $uid, $gid)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function addEnvironmentVariables(string $file, string $uid, string $gid): bool
+    {
+        if (! is_file($file)) {
+            return true;
+        }
+
+        $content = file_get_contents($file);
+
+        if ($content === false) {
+            $this->error("No se pudo leer: {$file}");
+
+            return false;
+        }
+
+        $missing = [];
+
+        foreach (['UID' => $uid, 'GID' => $gid] as $variable => $value) {
+            if (preg_match('/^' . preg_quote($variable, '/') . '=/m', $content) !== 1) {
+                $missing[] = "{$variable}={$value}";
+            }
+        }
+
+        if ($missing === []) {
+            return true;
+        }
+
+        $suffix = $content !== '' && ! str_ends_with($content, "\n") ? "\n" : '';
+        $updated = $content . $suffix . implode("\n", $missing) . "\n";
+
+        if (file_put_contents($file, $updated, LOCK_EX) === false) {
+            $this->error("No se pudo actualizar: {$file}");
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function currentUserId(string $function): ?string
+    {
+        if (function_exists($function)) {
+            return (string) $function();
+        }
+
+        $command = $function === 'posix_getgid' ? 'id -g' : 'id -u';
+        $value = trim((string) shell_exec($command));
+
+        return ctype_digit($value) ? $value : null;
+    }
+
+    private function ensureGitignoreEntry(): bool
+    {
+        $file = base_path('.gitignore');
+
+        if (! is_file($file)) {
+            return true;
+        }
+
+        $content = file_get_contents($file);
+
+        if ($content === false) {
+            $this->error("No se pudo leer: {$file}");
+
+            return false;
+        }
+
+        if (preg_match('/^docker-compose\.override\.yml$/m', $content) === 1) {
+            return true;
+        }
+
+        $suffix = $content !== '' && ! str_ends_with($content, "\n") ? "\n" : '';
+
+        if (file_put_contents($file, $content . $suffix . "docker-compose.override.yml\n", LOCK_EX) === false) {
+            $this->error("No se pudo actualizar: {$file}");
 
             return false;
         }

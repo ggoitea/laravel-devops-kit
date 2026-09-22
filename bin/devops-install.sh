@@ -54,6 +54,29 @@ if [ ! -d "$TARGET" ]; then
     exit 1
 fi
 
+add_if_missing() {
+    FILE="$1"
+    VAR="$2"
+    VALUE="$3"
+
+    if [ -f "$FILE" ] && ! grep -q "^${VAR}=" "$FILE"; then
+        printf '%s=%s\n' "$VAR" "$VALUE" >> "$FILE"
+    fi
+}
+
+UID_VALUE="$(id -u)"
+GID_VALUE="$(id -g)"
+
+add_if_missing "$TARGET/.env.example" "UID" "$UID_VALUE"
+add_if_missing "$TARGET/.env.example" "GID" "$GID_VALUE"
+
+add_if_missing "$TARGET/.env" "UID" "$UID_VALUE"
+add_if_missing "$TARGET/.env" "GID" "$GID_VALUE"
+
+if [ -f "$TARGET/.gitignore" ] && ! grep -Fxq "docker-compose.override.yml" "$TARGET/.gitignore"; then
+    printf '%s\n' "docker-compose.override.yml" >> "$TARGET/.gitignore"
+fi
+
 STUBS_DIR="$SCRIPT_DIR/../resources/stubs"
 
 if [ ! -d "$STUBS_DIR" ]; then

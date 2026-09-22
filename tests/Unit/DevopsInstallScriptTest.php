@@ -70,6 +70,63 @@ class DevopsInstallScriptTest extends TestCase
         $this->assertNotSame('# custom', file_get_contents($target));
     }
 
+    public function test_script_adds_uid_and_gid_to_existing_environment_files(): void
+    {
+        file_put_contents($this->target . '/.env.example', "APP_ENV=testing\n");
+        file_put_contents($this->target . '/.env', 'APP_ENV=testing');
+
+        $this->runScript();
+
+        foreach (['.env.example', '.env'] as $file) {
+            $content = file_get_contents($this->target . '/' . $file);
+
+            $this->assertStringContainsString('UID=' . trim(shell_exec('id -u')), $content);
+            $this->assertStringContainsString('GID=' . trim(shell_exec('id -g')), $content);
+        }
+    }
+
+    public function test_script_preserves_existing_environment_values_without_duplicates(): void
+    {
+        file_put_contents($this->target . '/.env', "UID=2000\nGID=3000\n");
+
+        $this->runScript(['--force']);
+
+        $content = file_get_contents($this->target . '/.env');
+
+        $this->assertStringContainsString('UID=2000', $content);
+        $this->assertStringContainsString('GID=3000', $content);
+        $this->assertSame(1, substr_count($content, 'UID='));
+        $this->assertSame(1, substr_count($content, 'GID='));
+    }
+
+    public function test_script_does_not_create_missing_environment_files(): void
+    {
+        $this->runScript();
+
+        $this->assertFileDoesNotExist($this->target . '/.env.example');
+        $this->assertFileDoesNotExist($this->target . '/.env');
+    }
+
+    public function test_script_adds_override_compose_to_existing_gitignore(): void
+    {
+        file_put_contents($this->target . '/.gitignore', "vendor/\n");
+
+        $this->runScript();
+        $this->runScript();
+
+        $content = file_get_contents($this->target . '/.gitignore');
+
+        $this->assertStringContainsString("docker-compose.override.yml\n", $content);
+        $this->assertSame(1, substr_count($content, 'docker-compose.override.yml'));
+    }
+
+    public function test_script_does_not_create_missing_gitignore(): void
+    {
+        $this->runScript();
+
+        $this->assertFileDoesNotExist($this->target . '/.gitignore');
+    }
+
     public function test_script_output_matches_stubs(): void
     {
         $this->runScript();
