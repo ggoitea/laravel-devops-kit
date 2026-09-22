@@ -8,6 +8,22 @@
         "/^composer validate --no-check-publish && php -l src/Console/Commands/InstallCommand\\.php && composer test && git diff --check$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^php -r '\\$j=json_decode\\(file_get_contents\\(\"composer\\.lock\"\\), true\\); foreach \\(array_merge\\(\\$j\\[\"packages\"\\] \\?\\? \\[\\], \\$j\\[\"packages-dev\"\\] \\?\\? \\[\\]\\) as \\$p\\) \\{ if \\(str_starts_with\\(\\$p\\[\"name\"\\], \"illuminate/\"\\) \\|\\| \\$p\\[\"name\"\\] === \"orchestra/testbench\" \\|\\| \\$p\\[\"name\"\\] === \"phpunit/phpunit\"\\) echo \\$p\\[\"name\"\\]\\.\" \"\\.\\$p\\[\"version\"\\]\\.PHP_EOL; \\}'$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^composer show illuminate/support illuminate/console --format=json && php -r '\\$j=json_decode\\(file_get_contents\\(\"composer\\.lock\"\\), true\\); echo \"content-hash: \"\\.\\(\\$j\\[\"content-hash\"\\] \\?\\? \"none\"\\)\\.PHP_EOL;'$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php -r '\\$j=json_decode\\(file_get_contents\\(\"composer\\.lock\"\\), true\\); echo \"content-hash: \"\\.\\(\\$j\\[\"content-hash\"\\] \\?\\? \"none\"\\)\\.PHP_EOL; echo \"packages: \"\\.count\\(\\$j\\[\"packages\"\\] \\?\\? \\[\\]\\)\\.PHP_EOL;'$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php -r '\\$j=json_decode\\(file_get_contents\\(\"composer\\.lock\"\\), true\\); foreach \\(array_merge\\(\\$j\\[\"packages\"\\] \\?\\? \\[\\], \\$j\\[\"packages-dev\"\\] \\?\\? \\[\\]\\) as \\$p\\) echo \\$p\\[\"name\"\\]\\.\" \"\\.\\$p\\[\"version\"\\]\\.PHP_EOL;' \\| rg '\\^\\(illuminate/\\|laravel/framework\\|orchestra/testbench\\|phpunit/phpunit\\)'$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }
