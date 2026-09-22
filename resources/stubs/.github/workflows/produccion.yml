@@ -1,0 +1,89 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: [self-hosted, debian]
+
+    environment: produccion
+
+    container:
+      image: ggoitea/laravel-ci:13-php8.5
+
+    env:
+      REGISTRY: ${{ vars.REGISTRY_HOST }}
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          composer install \
+            --no-interaction \
+            --prefer-dist \
+            --optimize-autoloader
+
+      - name: Install frontend dependencies
+        run: |
+          npm install
+
+      - name: Configure environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Prepare database
+        run: |
+          touch database/database.sqlite
+          php artisan migrate --force
+
+      - name: Build frontend
+        run: |
+          npm run build
+
+      - name: Run tests
+        run: |
+          php artisan test
+
+      - name: Build production image
+        run: |
+          docker build \
+            -f docker/Dockerfile.prod \
+            -t ${REGISTRY}/${GITHUB_REPOSITORY#*/}:${GITHUB_SHA} \
+            -t ${REGISTRY}/${GITHUB_REPOSITORY#*/}:latest \
+            .
+
+      - name: Login to private registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | \
+          docker login ${REGISTRY} \
+          --username "admin" \
+          --password-stdin
+
+      - name: Push production image
+        run: |
+          docker push ${REGISTRY}/${GITHUB_REPOSITORY#*/}:${GITHUB_SHA}
+          docker push ${REGISTRY}/${GITHUB_REPOSITORY#*/}:latest
+
+  deploy:
+    needs: ci
+    runs-on: [self-hosted, debian]
+
+    environment: produccion
+
+    steps:
+      - name: Deploy application
+        run: |
+          echo "Deploying application to production environment"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY_DEPLOY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519  
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "cd ${{ vars.STACK_PATH }} && APP_VERSION=${GITHUB_SHA} docker stack deploy --with-registry-auth -c docker-compose.yml ${{ vars.STACK_NAME }}"
