@@ -11,7 +11,6 @@ class InstallCommand extends Command
     protected $description = 'Instala los archivos Docker y Makefile del proyecto';
 
     private const FILES = [
-        'Dockerfile' => 'Dockerfile',
         'docker-compose.yml' => 'docker-compose.yml',
         'Makefile' => 'Makefile',
         'devops.sh' => 'devops.sh',

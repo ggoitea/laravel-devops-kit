@@ -7,7 +7,6 @@ use Ggoitea\LaravelDevopsKit\Tests\TestCase;
 class InstallCommandTest extends TestCase
 {
     private const EXPECTED_FILES = [
-        'Dockerfile',
         'docker-compose.yml',
         'Makefile',
         'devops.sh',
