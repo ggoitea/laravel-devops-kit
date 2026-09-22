@@ -2,9 +2,22 @@
 
 [English](README.md) | [Español](README.es.md)
 
-DevOps toolkit to add a complete dockerized environment to your Laravel projects in minutes.
+The fastest way to give a Laravel project a consistent Docker workflow for development and production.
 
-Instead of configuring `Dockerfile`, `docker-compose.yml`, a `Makefile` and shell scripts by hand, this package publishes everything ready to use: a Makefile with the most common tasks (`init`, `up`, `down`, `shell`, `artisan`, ...) and a stack with PostgreSQL by default, Redis, Nginx, Vite and optional services (MariaDB and MailHog).
+From a single command, this kit adds the files and conventions needed to work locally, run the application in containers and connect the repository to a production pipeline. It includes development and production Dockerfiles, Docker Compose, Nginx, PHP configuration, shell scripts, a Makefile and a GitHub Actions workflow ready to adapt.
+
+## The real advantage
+
+This is not just a collection of Docker examples. It removes the repetitive setup work every Laravel project needs and keeps the team on the same workflow:
+
+- **Bootstrap in seconds:** publish the complete Docker setup without creating each file by hand.
+- **A ready-to-use development environment:** Laravel, PostgreSQL/PostGIS, Redis, Nginx and Vite, with MariaDB and MailHog available when needed.
+- **One interface for daily work:** initialize the project, start services, open a container shell, run Artisan, Composer and npm through `make`.
+- **Fewer permission problems:** the installer adds the host `UID` and `GID` to `.env` and `.env.example`, so the development container can run with the local user's identity.
+- **A path to production:** the package includes a production Dockerfile and a GitHub Actions workflow that installs dependencies, builds assets, runs migrations and tests, builds and pushes the image, then deploys it through Docker Swarm.
+- **Safe adoption:** existing files are preserved by default, local Compose overrides are ignored by Git, and `--force` is available when a project must be reset to the package defaults.
+
+The result is a repeatable starting point for a new Laravel project and a practical way to standardize existing ones without rebuilding the DevOps setup from scratch.
 
 ## Requirements
 
@@ -43,13 +56,27 @@ composer require --dev ggoitea/laravel-devops-kit:dev-main
 
 ## Deploying the DevOps environment
 
-Run the Artisan command inside your Laravel project to publish the `Dockerfile`, `docker-compose.yml`, `Makefile`, `devops.sh`, `init.sh` and the `docker/` directory:
+Run the self-contained installer from the root of your Laravel project:
+
+```bash
+vendor/bin/devops-install.sh
+```
+
+It publishes the development and production Dockerfiles, `docker-compose.yml`, `docker-compose.override.yml`, `Makefile`, `devops.sh`, `init.sh`, the `docker/` configuration and `.github/workflows/produccion.yml`.
+
+The installer also:
+
+- adds `UID` and `GID` to `.env` and `.env.example` when those files exist;
+- adds `docker-compose.override.yml` to `.gitignore` when `.gitignore` exists;
+- creates the required directories and marks `devops.sh` and `init.sh` as executable.
+
+If you prefer to invoke it through Laravel, the package also registers the Artisan command. It publishes the core Docker and Makefile files:
 
 ```bash
 php artisan devops:install
 ```
 
-Existing files are **preserved**. The installer skips any file that already exists in your project without overwriting it. To replace them explicitly:
+Existing files are **preserved**. Both installers skip any file that already exists without overwriting it. To replace them explicitly:
 
 ```bash
 php artisan devops:install --force
@@ -61,7 +88,7 @@ The `--force` flag overwrites every previously installed file, so use it when yo
 
 ### Installing without PHP
 
-If you don't have PHP installed on your machine, use the self-contained `devops-install.sh` script. It replicates the `devops:install` Artisan command with no dependency on PHP or Composer.
+If you don't have PHP installed on your machine, use the self-contained `devops-install.sh` script. It runs with `sh` only and installs the complete set of Docker, development and production files without requiring PHP or Composer.
 
 If the package is installed via Composer, its binary is linked in `vendor/bin`:
 
@@ -69,13 +96,13 @@ If the package is installed via Composer, its binary is linked in `vendor/bin`:
 vendor/bin/devops-install.sh
 ```
 
-You can also download it standalone and run it from inside your Laravel project:
+If you have the package source available locally, you can also run the script from inside your Laravel project:
 
 ```bash
 sh devops-install.sh
 ```
 
-Both produce the same files and respect the same rules — existing files are preserved unless you pass `--force`:
+Both methods produce the same files and respect the same rules — existing files are preserved unless you pass `--force`:
 
 ```bash
 devops-install.sh --force
@@ -85,20 +112,32 @@ devops-install.sh --force
 
 The stack is defined in `docker-compose.yml` and includes:
 
-| Service   | Description                                   | Starts by default |
-|-----------|-----------------------------------------------|-------------------|
-| `app`     | Laravel application (development container)   | Yes               |
-| `pgsql`   | PostgreSQL — the default database             | Yes               |
-| `redis`   | Redis (cache, queues, sessions)               | Yes               |
-| `nginx`   | Web server, exposes the app on port `8000` and Vite on `5173` | Yes |
-| `mariadb` | MariaDB — alternative database                | No (profile `tools`) |
-| `mailhog` | Email catcher for development (UI on `8025`)  | No (profile `tools`) |
+| Service   | Description                                                   | Starts by default    |
+| --------- | ------------------------------------------------------------- | -------------------- |
+| `app`     | Laravel application (development container)                   | Yes                  |
+| `pgsql`   | PostgreSQL — the default database                             | Yes                  |
+| `redis`   | Redis (cache, queues, sessions)                               | Yes                  |
+| `nginx`   | Web server, exposes the app on port `8000` and Vite on `5173` | Yes                  |
+| `mariadb` | MariaDB — alternative database                                | No (profile `tools`) |
+| `mailhog` | Email catcher for development (UI on `8025`)                  | No (profile `tools`) |
 
 `pgsql` is the **default database**. `mariadb` and `mailhog` belong to the `tools` profile, so they are not started by `make up`: you must start them explicitly when you need them (see below).
 
+## Production workflow
+
+The published `.github/workflows/produccion.yml` provides a production path for repositories using GitHub Actions. It runs on pushes to `main` or manually, installs PHP and frontend dependencies, prepares the environment, runs migrations and tests, builds the production image, pushes it to a private registry and deploys it with Docker Swarm over SSH.
+
+Before using it, configure the `produccion` environment with these values:
+
+- Variables: `REGISTRY_HOST`, `SSH_HOST`, `SSH_PORT`, `SSH_USER`, `STACK_PATH` and `STACK_NAME`.
+- Secrets: `REGISTRY_PASSWORD` and `SSH_KEY_DEPLOY`.
+- A self-hosted runner labelled `debian` with Docker access, plus the `ggoitea/laravel-ci` image used by the CI job.
+
+The workflow is a production baseline, not a provider-specific deployment platform: adapt the image, registry, runner and deployment command to your infrastructure.
+
 ## Makefile usage
 
-The `Makefile` shortcut given by the examples below is:
+The `Makefile` includes these shortcuts:
 
 ```bash
 make init          # Initialize the project (first time)
