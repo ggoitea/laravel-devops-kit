@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  pgsql:
+    ports:
+      - "${DB_PORT}:5432"
+  mariadb:
+    ports:
+      - "${DB_PORT:-3306}:${DB_PORT:-3306}"
+  redis:
+    ports:
+      - "${REDIS_PORT}:6379"
+  nginx:
+    ports:
+      - "8000:80"
+      - "5173:5173"
+
+volumes:
+  redis_data:
+  pgsql_data:
+  mariadb_data:
