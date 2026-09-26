@@ -41,6 +41,7 @@
         "/^git diff --check && sh -n bin/devops-install\\.sh && php -l src/Console/Commands/InstallCommand\\.php$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "make": true
     }
 }
