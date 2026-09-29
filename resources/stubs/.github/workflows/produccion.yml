@@ -29,7 +29,6 @@ jobs:
           composer install \
             --no-interaction \
             --prefer-dist \
-            --no-dev \
             --optimize-autoloader
 
       - name: Install frontend dependencies
