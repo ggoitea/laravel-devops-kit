@@ -33,7 +33,7 @@ jobs:
 
       - name: Install frontend dependencies
         run: |
-          npm install
+          npm ci
 
       - name: Configure environment
         run: |
@@ -52,6 +52,14 @@ jobs:
       - name: Run tests
         run: |
           php artisan test
+
+      - name: Install dependencies to build production image
+        run: |
+          composer install \
+            --no-interaction \
+            --no-dev \
+            --prefer-dist \
+            --optimize-autoloader
 
       - name: Build production image
         run: |
