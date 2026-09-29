@@ -29,6 +29,7 @@ jobs:
           composer install \
             --no-interaction \
             --prefer-dist \
+            --no-dev \
             --optimize-autoloader
 
       - name: Install frontend dependencies
@@ -39,11 +40,18 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+      
+      - name: clear cache
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
 
       - name: Prepare database
         run: |
+          mkdir -p database
           touch database/database.sqlite
-          php artisan migrate --force
+          php artisan migrate --seed --force
 
       - name: Build frontend
         run: |
@@ -93,5 +101,25 @@ jobs:
           echo "Deploying application to production environment"
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY_DEPLOY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519  
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 -p ${{ vars.SSH_PORT }} ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "cd ${{ vars.STACK_PATH }} && APP_VERSION=${GITHUB_SHA} docker stack deploy --with-registry-auth -c docker-compose.yml ${{ vars.STACK_NAME }}"
+          chmod 600 ~/.ssh/id_ed25519
+          
+          # SSH connection options
+          SSH_OPTS="-o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 -p ${{ vars.SSH_PORT }}"
+          
+          # Deployment directory
+          STACK_DIR="${{ vars.STACK_PATH }}"
+          
+          # Docker stack deploy options
+          DOCKER_OPTS="--with-registry-auth -c docker-compose.yml"
+          
+          # Image registry and name
+          IMAGE="${{ vars.REGISTRY_HOST }}/${GITHUB_REPOSITORY#*/}:${GITHUB_SHA}"
+          
+          # Database migration command (runs before stack deploy)
+          MIGRATION_CMD="docker run --rm --env-file $STACK_DIR/.env.docker $IMAGE php artisan migrate --seed --force"
+          
+          # Remote deployment command
+          REMOTE_CMD="cd $STACK_DIR && APP_VERSION=${GITHUB_SHA} $MIGRATION_CMD && docker stack deploy $DOCKER_OPTS ${{ vars.STACK_NAME }}"
+          
+          # Execute deployment
+          ssh $SSH_OPTS ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "$REMOTE_CMD"

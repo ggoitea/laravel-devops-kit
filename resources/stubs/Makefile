@@ -36,7 +36,7 @@ up:
 	fi
 
 npm-dev:
-	@docker compose exec -d app npm run dev
+	@docker compose exec -d app sh -c 'npm install && npm run dev'
 
 down:
 	@docker compose down $(filter-out $@,$(MAKECMDGOALS))
