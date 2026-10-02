@@ -115,7 +115,7 @@ jobs:
           IMAGE="${{ vars.REGISTRY_HOST }}/${GITHUB_REPOSITORY#*/}:${GITHUB_SHA}"
           
           # Database migration command (runs before stack deploy)
-          MIGRATION_CMD="docker run --rm --env-file $STACK_DIR/.env.docker $IMAGE php artisan migrate --seed --force"
+          MIGRATION_CMD="docker run --rm --env-file .env.docker --add-host=host.docker.internal:host-gateway $IMAGE php artisan migrate --seed --force"
           
           # Remote deployment command
           REMOTE_CMD="cd $STACK_DIR && APP_VERSION=${GITHUB_SHA} $MIGRATION_CMD && docker stack deploy $DOCKER_OPTS ${{ vars.STACK_NAME }}"
