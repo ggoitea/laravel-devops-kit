@@ -10,4 +10,6 @@ COPY ./docker/php/php.ini-development /usr/local/etc/php/php.ini
 RUN addgroup -g ${GID} app \
     && adduser -D -u ${UID} -G app app
 
+RUN echo 'source /usr/share/bash-completion/bash_completion' >> /home/app/.bashrc
+
 USER app

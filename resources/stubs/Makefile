@@ -45,7 +45,7 @@ ps:
 	@docker compose ps $(filter-out $@,$(MAKECMDGOALS))
 
 shell:
-	@docker compose exec -it $(or $(filter-out $@,$(MAKECMDGOALS)),app) sh
+	@docker compose exec -it $(or $(filter-out $@,$(MAKECMDGOALS)),app) bash
 
 
 logs:
