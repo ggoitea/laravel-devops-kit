@@ -8,8 +8,16 @@ ARG GID=1000
 COPY ./docker/php/php.ini-development /usr/local/etc/php/php.ini
 
 RUN addgroup -g ${GID} app \
-    && adduser -D -u ${UID} -G app app
+    && adduser -D -u ${UID} -G app app \
+    && printf '%s\n' \
+       '[ -r /usr/share/bash-completion/bash_completion ] && source /usr/share/bash-completion/bash_completion' \
+       >> /home/app/.bashrc \
+    && chown app:app /home/app/.bashrc
 
-RUN echo 'source /usr/share/bash-completion/bash_completion' >> /home/app/.bashrc
+
+USER app
+
+
+
 
 USER app
