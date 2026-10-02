@@ -1,0 +1,27 @@
+{
+    "name": "Laravel",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/var/www/html",
+    "shutdownAction": "none",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash"
+            },
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "onecentlin.laravel-blade",
+                "laravel.vscode-laravel",
+                "xdebug.php-debug",
+                "sst-dev.opencode",
+                "WallabyJs.console-ninja",
+                "nhedger.inertia",
+                "bradlc.vscode-tailwindcss",
+                "github.vscode-github-actions",
+                "mhutchie.git-graph",
+                "GitHub.vscode-pull-request-github"
+            ]
+        }
+    }
+}
